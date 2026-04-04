@@ -80,7 +80,7 @@ func New(db *gorm.DB) *flamego.Flame {
 	f.Use(
 		cors.CORS(cors.Options{
 			Scheme:      "*",
-			AllowDomain: []string{conf.App.CorsAllowDomain},
+			AllowDomain: conf.App.CorsAllowDomains,
 			Methods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		}),
 		sessioner,

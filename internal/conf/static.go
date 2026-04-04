@@ -14,15 +14,15 @@ var (
 
 var (
 	App struct {
-		Production            bool   `ini:"production"`
-		ExternalURL           string `ini:"external_url"`
-		ICP                   string `ini:"icp"`
-		UptraceDSN            string `ini:"uptrace_dsn"`
-		AliyunAccessKey       string `ini:"aliyun_access_key"`
-		AliyunAccessKeySecret string `ini:"aliyun_access_key_secret"`
-		SentryDSN             string `ini:"sentry_dsn"`
-		IPHeader              string `ini:"ip_header"`
-		CorsAllowDomain       string `ini:"cors_allow_domain"`
+		Production            bool     `ini:"production"`
+		ExternalURL           string   `ini:"external_url"`
+		ICP                   string   `ini:"icp"`
+		UptraceDSN            string   `ini:"uptrace_dsn"`
+		AliyunAccessKey       string   `ini:"aliyun_access_key"`
+		AliyunAccessKeySecret string   `ini:"aliyun_access_key_secret"`
+		SentryDSN             string   `ini:"sentry_dsn"`
+		IPHeader              string   `ini:"ip_header"`
+		CorsAllowDomains      []string `ini:"cors_allow_domains"`
 	}
 
 	Security struct {
