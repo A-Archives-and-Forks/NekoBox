@@ -1,0 +1,221 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nekobox
+          POSTGRES_PASSWORD: nekobox
+          POSTGRES_DB: nekobox_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mailhog:
+        image: mailhog/mailhog:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "wget -qO- http://localhost:8025/api/v2/messages || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Start MinIO (pgsty/minio)
+        run: |
+          docker run -d \
+            --name minio \
+            --network host \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            pgsty/minio \
+            server /data --console-address ":9001"
+
+      - name: Wait for MinIO
+        run: |
+          echo "Waiting for MinIO S3 API to be ready..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO is ready (health check passed)"
+              sleep 2
+              exit 0
+            fi
+            echo "Waiting for MinIO ($i/60)..."
+            sleep 2
+          done
+          echo "MinIO did not become ready in time"
+          docker logs minio || true
+          exit 1
+
+      - name: Create MinIO bucket
+        run: |
+          curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o ./mc
+          chmod +x ./mc
+          ./mc alias set local http://localhost:9000 minioadmin minioadmin
+          ./mc mb --ignore-existing local/nekobox-e2e
+          ./mc ls local/nekobox-e2e
+          echo "minio-smoke" > /tmp/minio-smoke.txt
+          ./mc cp /tmp/minio-smoke.txt local/nekobox-e2e/health/smoke.txt
+          ./mc stat local/nekobox-e2e/health/smoke.txt
+
+      # ── Backend ────────────────────────────────────────────────────────────
+
+      - name: Build backend
+        run: |
+          COVERPKG=$(go list ./... | paste -sd "," -)
+          go build -cover -covermode=atomic -coverpkg="$COVERPKG" -o ./nekobox-server ./cmd
+
+      - name: Start backend (port 8080)
+        run: |
+          mkdir -p coverage/backend
+          GOCOVERDIR=$PWD/coverage/backend NEKOBOX_CONFIG_PATH=conf/app.e2e.ini ./nekobox-server web &
+          echo $! > /tmp/nekobox-server.pid
+
+      # ── Frontend ───────────────────────────────────────────────────────────
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install
+
+      - name: Start frontend dev server (port 3000)
+        working-directory: web
+        run: pnpm dev:e2e &
+        env:
+          VITE_EXTERNAL_URL: http://localhost:3000
+
+      - name: Wait for frontend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is up!"
+              break
+            fi
+            echo "Waiting for frontend ($i/30)..."
+            sleep 2
+          done
+
+      # ── Playwright ─────────────────────────────────────────────────────────
+
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        working-directory: e2e
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_MAILHOG_URL: http://localhost:8025
+
+      - name: Stop backend and generate coverage.txt
+        if: always()
+        run: |
+          if [ -f /tmp/nekobox-server.pid ]; then
+            BACKEND_PID=$(cat /tmp/nekobox-server.pid)
+            if kill -0 "$BACKEND_PID" 2>/dev/null; then
+              kill "$BACKEND_PID"
+              for i in $(seq 1 20); do
+                if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if kill -0 "$BACKEND_PID" 2>/dev/null; then
+                kill -9 "$BACKEND_PID" || true
+              fi
+            fi
+          fi
+
+          mkdir -p coverage
+          if [ -d coverage/backend ] && [ -n "$(ls -A coverage/backend)" ]; then
+            go tool covdata textfmt -i=coverage/backend -o=coverage/coverage.txt
+            echo "Route coverage entries:"
+            grep 'internal/route/' coverage/coverage.txt | head -n 20 || true
+
+            if ! grep -q 'internal/route/' coverage/coverage.txt; then
+              echo "::error::No internal/route coverage found in coverage/coverage.txt"
+              exit 1
+            fi
+          else
+            echo "No backend coverage data found" > coverage/coverage.txt
+            echo "::error::No backend coverage data found in coverage/backend"
+            exit 1
+          fi
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/coverage.txt
+          retention-days: 30
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage.txt
+          flags: e2e
+          name: e2e-tests
+
