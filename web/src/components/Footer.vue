@@ -8,7 +8,7 @@
     {{ commitSHA.slice(0, 7) }}
   </a>
     | <a href="https://support.qq.com/products/293656" target="_blank">吐槽反馈</a>
-    | <a @click="router.push({name: 'sponsor'})">我要打钱</a>
+    | <a :href="router.resolve({name: 'sponsor'}).href" @click.prevent="router.push({name: 'sponsor'})">我要打钱</a>
   </p>
   <br/>
 </template>

@@ -1,7 +1,9 @@
 <template>
   <Skeleton :count="3" :loading="isInitLoading"></Skeleton>
   <div v-if="!isInitLoading">
-    <a v-for="(question) in questions" v-bind:key="question.id" @click="handleView(question)">
+    <a v-for="(question) in questions" v-bind:key="question.id"
+       :href="router.resolve({name: 'question', params: {domain: authStore.profile.domain, questionID: question.id}}).href"
+       @click.prevent="handleView(question)">
       <div>
         <hr>
         <span v-if="!question.isAnswered" class="uk-label uk-float-right uk-margin-small-right">未回答</span>

@@ -9,7 +9,8 @@
       <div v-for="question in questions" v-bind:key="question.id">
         <hr>
         <a class="uk-button uk-button-default uk-button-small uk-float-right"
-           @click="handleViewQuestion(question)">查看回答</a>
+           :href="router.resolve({name: 'question', params: {domain: props.pageProfileDomain, questionID: question.id}}).href"
+           @click.prevent="handleViewQuestion(question)">查看回答</a>
         <div class="uk-text-left uk-text-small uk-text-muted">{{ humanizeDate(question.createdAt) }}</div>
         <p class="uk-text-small uk-text-break">{{ question.content }}</p>
       </div>

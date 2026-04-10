@@ -12,7 +12,9 @@
         <span class=uk-text-small v-html="log.content"></span>
       </div>
       <p class="uk-text-right uk-text-small">
-        <a class="uk-link-text" @click="handleViewChangeLogs">查看更多...</a>
+        <a class="uk-link-text"
+           :href="router.resolve({name: 'change-logs'}).href"
+           @click.prevent="handleViewChangeLogs">查看更多...</a>
       </p>
     </Skeleton>
   </div>
