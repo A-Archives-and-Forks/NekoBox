@@ -18,7 +18,7 @@
       </div>
 
       <div v-if="question.answer" class="uk-card-body">
-        <p class="uk-text-small uk-text-break">
+        <p class="uk-text-small uk-text-break pre-wrap">
           <Skeleton>{{ question.answer }}</Skeleton>
         </p>
         <ul v-if="question.answerImageURLs.length > 0" class="uk-thumbnav" uk-margin>
