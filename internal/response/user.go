@@ -1,7 +1,5 @@
 package response
 
-import "time"
-
 type UserProfile struct {
 	UID               string `json:"uid"`
 	Name              string `json:"name"`
@@ -13,10 +11,10 @@ type UserProfile struct {
 }
 
 type PageQuestionsItem struct {
-	ID        uint      `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	Content   string    `json:"content"`
-	Answer    string    `json:"answer"`
+	ID        uint   `json:"id"`
+	CreatedAt Time   `json:"createdAt"`
+	Content   string `json:"content"`
+	Answer    string `json:"answer"`
 }
 
 type PageQuestions struct {
@@ -26,14 +24,14 @@ type PageQuestions struct {
 }
 
 type PageQuestion struct {
-	ID                uint      `json:"id"`
-	IsOwner           bool      `json:"isOwner"`
-	CreatedAt         time.Time `json:"createdAt"`
-	AnsweredAt        time.Time `json:"answeredAt"`
-	Content           string    `json:"content"`
-	Answer            string    `json:"answer"`
-	QuestionImageURLs []string  `json:"questionImageURLs"`
-	AnswerImageURLs   []string  `json:"answerImageURLs"`
-	HasReplyEmail     bool      `json:"hasReplyEmail"`
-	IsPrivate         bool      `json:"isPrivate"`
+	ID                uint     `json:"id"`
+	IsOwner           bool     `json:"isOwner"`
+	CreatedAt         Time     `json:"createdAt"`
+	AnsweredAt        Time     `json:"answeredAt"`
+	Content           string   `json:"content"`
+	Answer            string   `json:"answer"`
+	QuestionImageURLs []string `json:"questionImageURLs"`
+	AnswerImageURLs   []string `json:"answerImageURLs"`
+	HasReplyEmail     bool     `json:"hasReplyEmail"`
+	IsPrivate         bool     `json:"isPrivate"`
 }

@@ -60,7 +60,7 @@ func (*MineHandler) ListQuestions(ctx context.Context) error {
 	respQuestions := lo.Map(questions, func(question *db.Question, _ int) *response.MineQuestionsItem {
 		return &response.MineQuestionsItem{
 			ID:         question.ID,
-			CreatedAt:  question.CreatedAt,
+			CreatedAt:  response.Time(question.CreatedAt),
 			Content:    question.Content,
 			IsAnswered: question.Answer != "",
 			IsPrivate:  question.IsPrivate,

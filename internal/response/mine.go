@@ -1,17 +1,15 @@
 package response
 
 import (
-	"time"
-
 	"github.com/wuhan005/NekoBox/internal/db"
 )
 
 type MineQuestionsItem struct {
-	ID         uint      `json:"id"`
-	CreatedAt  time.Time `json:"createdAt"`
-	Content    string    `json:"content"`
-	IsAnswered bool      `json:"isAnswered"`
-	IsPrivate  bool      `json:"isPrivate"`
+	ID         uint   `json:"id"`
+	CreatedAt  Time   `json:"createdAt"`
+	Content    string `json:"content"`
+	IsAnswered bool   `json:"isAnswered"`
+	IsPrivate  bool   `json:"isPrivate"`
 }
 
 type MineQuestions struct {

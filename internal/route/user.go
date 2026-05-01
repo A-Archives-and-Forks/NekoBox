@@ -103,7 +103,7 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	respQuestions := lo.Map(questions, func(question *db.Question, _ int) *response.PageQuestionsItem {
 		return &response.PageQuestionsItem{
 			ID:        question.ID,
-			CreatedAt: question.CreatedAt,
+			CreatedAt: response.Time(question.CreatedAt),
 			Content:   question.Content,
 			Answer:    question.Answer,
 		}
@@ -371,8 +371,8 @@ func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 	return ctx.Success(&response.PageQuestion{
 		ID:                question.ID,
 		IsOwner:           ctx.IsSignedIn && ctx.User.ID == question.UserID,
-		CreatedAt:         question.CreatedAt,
-		AnsweredAt:        question.UpdatedAt,
+		CreatedAt:         response.Time(question.CreatedAt),
+		AnsweredAt:        response.Time(question.UpdatedAt),
 		Content:           question.Content,
 		Answer:            question.Answer,
 		QuestionImageURLs: questionImageURLs,
