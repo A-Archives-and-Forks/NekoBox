@@ -160,7 +160,7 @@ func (*MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, t
 	go func() {
 		if question.ReceiveReplyEmail != "" && question.Answer == "" { // We only send the email when the question has not been answered.
 			// Send notification to questioner.
-			if err := mail.SendNewAnswerMail(question.ReceiveReplyEmail, ctx.User.Domain, question.ID, question.Content, f.Answer); err != nil {
+			if err := mail.SendNewAnswerMail(question.ReceiveReplyEmail, ctx.User.Domain, question.ID, question.IsPrivate, question.Token, question.Content, f.Answer); err != nil {
 				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to send receive reply mail to questioner")
 			}
 		}
